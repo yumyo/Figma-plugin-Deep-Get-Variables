@@ -1,6 +1,6 @@
 # Deep Get Variables
 
-![Deep Get Variables](path_to_logo_image) <!-- Replace with the path to your logo image -->
+![Deep Get Variables](DGV-logo.svg) <!-- Replace with the path to your logo image -->
 
 ## Description
 
