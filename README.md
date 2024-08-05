@@ -1,8 +1,8 @@
 # Deep Get Variables
 
-## Description
-
 The **Deep Get Variables** plugin allows users to get all variables contained in a selection within Figma and optionally transform them into Design Tokens names with a custom prefix for Android and iOS formats.
+
+---
 
 <img src="https://github.com/yumyo/deep-get-variables/raw/main/DGV-logo.svg" alt="Deep Get Variables" width="666">
 
