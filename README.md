@@ -1,6 +1,6 @@
 # Deep Get Variables
 	
-<img src="[/yumyo/deep-get-variables/raw/main/DGV-logo.svg](https://github.com/yumyo/deep-get-variables/raw/main/DGV-logo.svg)" alt="Deep Get Variables" style="max-width: 400px;">
+<img src="https://github.com/yumyo/deep-get-variables/raw/main/DGV-logo.svg" alt="Deep Get Variables" width="369">
 
 ## Description
 
