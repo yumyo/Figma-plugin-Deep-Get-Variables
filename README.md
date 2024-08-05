@@ -1,6 +1,6 @@
 # Deep Get Variables
 
-The **Deep Get Variables** plugin allows users to get all variables contained in a selection within Figma and optionally transform them into Design Tokens names with a custom prefix for Android and iOS formats.
+The **Deep Get Variables** plugin for **Dev Mode** allows users to get all variables contained in a selection recursively, and optionally transform them into Design Tokens names with a custom prefix for Android and iOS formats.
 
 ---
 
@@ -16,14 +16,15 @@ The **Deep Get Variables** plugin allows users to get all variables contained in
 
 ## Usage
 
-1. **Select Elements**: Select the elements in your Figma document from which you want to retrieve variables.
-2. **Run the Plugin**: Open the **Deep Get Variables** plugin.
-3. **View Variables**: The plugin will display all variables contained in the selection.
-4. **Transform Names (Optional)**:
+1. **Open Dev Mode**: Make sure Dev Mode is enabled.
+2. **Select Elements**: Select the elements in your Figma document from which you want to retrieve variables.
+3. **Run the Plugin**: Open the **Deep Get Variables** plugin.
+4. **View Variables**: The plugin will display all variables contained in the selection.
+5. **Transform Names (Optional)**:
     - Check the "Transform Design Tokens Names" option.
     - Enter a custom prefix for the variable names.
     - Click "Generate" to see the transformed names for Android and iOS.
-5. **Copy to Clipboard**: Use the "Copy" button next to the transformed names to copy them to the clipboard.
+6. **Copy to Clipboard**: Use the "Copy" button next to the transformed names to copy them to the clipboard.
 
 ## Installation
 

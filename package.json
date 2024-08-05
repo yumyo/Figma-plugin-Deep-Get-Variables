@@ -1,7 +1,7 @@
 {
   "name": "Deep-Get-Variables",
   "version": "1.0.0",
-  "description": "Your Figma Plugin",
+  "description": "The Deep Get Variables plugin allows users to get all variables contained in a selection recursively, and optionally transform them into Design Tokens names with a custom prefix for Android and iOS formats.",
   "main": "code.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
