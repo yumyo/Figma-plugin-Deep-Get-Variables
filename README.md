@@ -52,6 +52,12 @@ To develop and modify the plugin:
     ```
 5. Load the `manifest.json` file in Figma to use the plugin.
 
+## New Feature Requests
+
+If you have ideas for new features or improvements, we would love to hear from you! Please submit your feature requests by creating a new issue on our GitHub repository. Provide as much detail as possible, including the problem the feature will solve, potential use cases, and any specific requirements or examples. 
+
+Also pull requests are more than welcome! With your contributions help make this project better for everyone, and we appreciate your feedback and suggestions.
+
 ## Credits
 
 Network by Anwar Hossain from <a href="https://thenounproject.com/browse/icons/term/network/" target="_blank" title="Network Icons">Noun Project</a> (CC BY 3.0)
@@ -60,6 +66,3 @@ Network by Anwar Hossain from <a href="https://thenounproject.com/browse/icons/t
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
----
-
-Feel free to contribute to this project by submitting issues or pull requests. Your contributions are welcome and appreciated!
