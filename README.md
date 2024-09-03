@@ -4,7 +4,7 @@ The **Deep Get Variables** plugin for **Dev Mode** allows users to get all varia
 
 ---
 
-<img src="https://github.com/yumyo/deep-get-variables/raw/main/DGV-v3-o.png" alt="Deep Get Variables" width="666">
+<img src="https://github.com/yumyo/deep-get-variables/raw/preact/DGV-v3-o.png" alt="Deep Get Variables" width="666">
 
 ## Features
 
