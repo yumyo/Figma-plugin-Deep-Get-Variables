@@ -1,0 +1,216 @@
+
+<div class="">
+  <h2>Deep Get Variables</h2>
+  <p>Get all variables contained in a selection and optionally generate Design Tokens names.</p>
+  
+  <h3>Properties overview</h3>
+  <pre id="properties-list" class="small"></pre>
+  
+  <div class="flex row " style="align-items: baseline;">
+    <h3 class="mr-1">Variables</h3><button id="copyVariables" class="copy-button"
+      onclick="copyToClipboard('variable-list')">Copy</button>
+  </div>
+  <pre id="variable-list" class="accent"></pre>
+  
+  <div class="mb-1">
+    <label>
+      <input type="checkbox" id="transformNames" onchange="toggleTransformOptions()"> Transform Design Tokens Names
+    </label>
+    <label>
+      <input type="checkbox" id="parseTextStyles" />
+      Parse Text Styles
+    </label>
+      <!-- TextArea for custom properties -->
+      <div id="customProperties" class="hidden">
+        <label for="propertyNames">Text Style Properties (one per line):</label>
+        <textarea id="propertyNames" rows="5">
+          Font Size
+          Line Height
+          Font Weight
+        </textarea>
+      </div>
+  </div>
+  
+  <div id="transformOptions" class="hidden">
+    <div class="flex row " style="align-items: baseline;">
+      <label class="mb-1 mr-1">
+        <div class="flex row " style="align-items: baseline;">
+          <span class="mr-1">Prefix: </span><input type="text" id="prefixInput" value="">
+        </div>
+      </label>
+      <button class="mb-1" onclick="transformAndDisplay()">Generate</button>
+    </div>
+  
+    <div class="flex column align-start ">
+      <div class="flex row " style="align-items: baseline;">
+        <h3 class="mr-1">Android Format</h3><button id="copyAndroid" class="copy-button"
+          onclick="copyToClipboard('androidFormat')">Copy</button>
+      </div>
+      <pre id="androidFormat" class="attention m-0 width border-box"></pre>
+  
+      <div class="flex column align-start ">
+        <div class="flex row " style="align-items: baseline;">
+          <h3 class="mr-1">iOS Format</h3><button id="copyIos" class="copy-button"
+            onclick="copyToClipboard('iosFormat')">Copy</button>
+        </div>
+        <pre id="iosFormat" class="attention m-0 width border-box"></pre>
+      </div>
+  
+      <div class="flex column align-start ">
+        <div class="flex row " style="align-items: baseline;">
+          <h3 class="mr-1">CSS Variables</h3><button id="copyCss" class="copy-button" onclick="copyToClipboard('cssFormat')">Copy</button>
+        </div>
+        <pre id="cssFormat" class="m-0 width border-box"></pre>
+      </div>
+      
+    </div>
+  </div>
+    <script>
+  
+      function toTitleCase(str) {
+        return str.replace(/\w\S*/g, function (txt) {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+      }
+  
+      let lastVariableNames = [];
+      let parseTextStyles = false;  // Initialize with default value
+  
+      window.onmessage = (event) => {
+        if (event.data.pluginMessage.type === 'variables') {
+          const variables = event.data.pluginMessage.data;
+          const propertiesList = document.getElementById('properties-list');
+          const variableList = document.getElementById('variable-list');
+          const variableNames = variables.map(variable => variable.name);
+  
+          propertiesList.innerHTML = '';
+          variableList.innerHTML = '';
+  
+          let lastNodeName = null;
+  
+          if (variables.length === 0) {
+            // Clear the transform options if enabled
+            lastVariableNames = [];
+            document.getElementById('androidFormat').textContent = '';
+            document.getElementById('iosFormat').textContent = '';
+            return;
+          }
+  
+          variableList.textContent = variableNames.join('\n');
+  
+          variables.forEach(variable => {
+            const property = document.createElement('div');
+            property.className = 'variable-property';
+  
+            if (variable.nodeName !== lastNodeName) {
+              const label = document.createElement('label');
+              label.className = 'variable-label bold mt-1';
+              label.textContent = `${toTitleCase(variable.nodeName)} (Layer Name)`;
+              property.appendChild(label);
+              lastNodeName = variable.nodeName;
+            }
+  
+            const div = document.createElement('div');
+            div.className = 'variable-details';
+            // Create the span element for the variable name
+            const span = document.createElement('span');
+            span.className = 'accent';
+            span.textContent = variable.name;
+  
+            // Set the content of the div, with the span wrapped around the variable name
+            div.innerHTML = `  ${toTitleCase(variable.type)}: `;
+            div.appendChild(span);
+  
+            property.appendChild(div);
+            propertiesList.appendChild(property);
+          });
+  
+          lastVariableNames = variableNames;
+  
+          if (document.getElementById('transformNames').checked) {
+            transformAndDisplay();
+          }
+        }
+      };
+  
+      // Toggle parse text styles
+      document.getElementById('parseTextStyles').addEventListener('change', () => {
+        parseTextStyles = document.getElementById('parseTextStyles').checked;
+        // Send the updated value to the plugin script and re-trigger parsing
+        parent.postMessage({ pluginMessage: { type: 'toggleParseTextStyles', value: parseTextStyles } }, '*');
+      });
+  
+      function transformVariableNames(variableNames, prefix) {
+        const androidFormat = [];
+        const iosFormat = [];
+  
+        variableNames.forEach(name => {
+          // Transform to Android format
+          let androidName = prefix ? `${prefix}_${name.toLowerCase().replace(/\s/g, '_').replace(/\/|-/g, '_')}` : `${name.toLowerCase().replace(/\s/g, '_').replace(/\/|-/g, '_')}`;
+          androidFormat.push(androidName);
+  
+          // Transform to iOS format
+          let iosName = prefix + name
+            .replace(/-(.)/g, (_, p1) => p1.toUpperCase()) // Capitalize letters following dashes
+            .replace(/[_\s\/-]/g, ''); // Remove underscores, spaces, slashes, and dashes
+          // Ensure the first letter of the resulting string is lowercase
+          iosName = iosName.charAt(0).toLowerCase() + iosName.slice(1);
+  
+          iosFormat.push(iosName);
+        });
+  
+        return { androidFormat, iosFormat };
+      }
+  
+      function transformAndDisplay() {
+        const prefix = document.getElementById('prefixInput').value;
+        const { androidFormat, iosFormat } = transformVariableNames(lastVariableNames, prefix);
+  
+        document.getElementById('androidFormat').textContent = androidFormat.join('\n');
+        document.getElementById('iosFormat').textContent = iosFormat.join('\n');
+      }
+  
+      function toggleTransformOptions() {
+        const transformOptions = document.getElementById('transformOptions');
+        if (document.getElementById('transformNames').checked) {
+          transformOptions.classList.remove('hidden');
+          transformAndDisplay();
+        } else {
+          transformOptions.classList.add('hidden');
+          document.getElementById('androidFormat').textContent = '';
+          document.getElementById('iosFormat').textContent = '';
+        }
+      }
+  
+      function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).textContent;
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Copied to clipboard');
+      }
+  
+      // Initial selection handling
+      document.addEventListener('DOMContentLoaded', () => {
+        window.parent.postMessage({ pluginMessage: { type: 'getSelection' } }, '*');
+      });
+  
+      // Listen for selection changes
+      window.addEventListener('message', (event) => {
+        if (event.data.pluginMessage.type === 'selectionchange') {
+          const variables = event.data.pluginMessage.data;
+          if (variables.length === 0) {
+            // Clear the outputs if selection is empty
+            document.getElementById('properties-list').innerHTML = '';
+            document.getElementById('variable-list').innerHTML = '';
+            document.getElementById('androidFormat').textContent = '';
+            document.getElementById('iosFormat').textContent = '';
+          } else {
+            window.onmessage(event);
+          }
+        }
+      });
+    </script>

@@ -2,16 +2,17 @@
   "name": "Deep Get Variables",
   "id": "1402295779914034094",
   "api": "1.0.0",
-  "main": "code.js",
+  "main":"build/main.js",
+  "ui":"build/ui.js",
   "capabilities": [
     "inspect"
   ],
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",
   "editorType": [
-    "dev"
+    "dev",
+    "figma"
   ],
-  "ui": "ui.html",
   "networkAccess": {
     "allowedDomains": [
       "none"
