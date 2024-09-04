@@ -1,4 +1,6 @@
 import {
+  Columns,
+  Text,
   Button,
   Container,
   render,
@@ -6,11 +8,15 @@ import {
   Textbox,
   VerticalSpace,
   Checkbox,
+  Tabs,
+  TabsOption,
 } from "@create-figma-plugin/ui";
-import { emit, on } from "@create-figma-plugin/utilities";
-import { h, Fragment } from "preact";
+import { emit } from "@create-figma-plugin/utilities";
+import { h, JSX, Fragment } from "preact";
 import { useCallback, useState, useEffect } from "preact/hooks";
-import { CloseHandler, VariableUpdateHandler } from "./types";
+import { VariableUpdateHandler } from "./types";
+
+import CopyButton from "./CopyButton";
 
 // Define the interface for VariableInfo
 interface VariableInfo {
@@ -32,9 +38,11 @@ function Plugin() {
   const [customText, setCustomText] = useState(
     "Font Size\nLine Height\nFont Weight"
   );
-  const [transformNames, setTransformNames] = useState(false);
+  const [transformNames, setTransformNames] = useState(true);
   const [androidFormat, setAndroidFormat] = useState("");
   const [iosFormat, setIosFormat] = useState("");
+  const [cssFormat, setCssFormat] = useState(""); // Added state for CSS format
+  const [tabValue, setTabValue] = useState<string>("Android"); // Default tab
 
   useEffect(() => {
     const handleMessages = (event: MessageEvent) => {
@@ -45,6 +53,12 @@ function Plugin() {
           transformAndDisplay(pluginMessage.data);
         }
       }
+      if (pluginMessage.type === "transformedVariableNames") {
+        const { androidFormat, iosFormat, cssFormat } = pluginMessage.data;
+        setAndroidFormat(androidFormat.join("\n"));
+        setIosFormat(iosFormat.join("\n"));
+        setCssFormat(cssFormat.join("\n"));
+      }
     };
 
     window.addEventListener("message", handleMessages);
@@ -52,6 +66,14 @@ function Plugin() {
 
     return () => window.removeEventListener("message", handleMessages);
   }, [transformNames]);
+
+  useEffect(() => {
+    // Send parseTextStyles state to the plugin controller
+    window.parent.postMessage(
+      { pluginMessage: { type: "toggleParseTextStyles", value: parseTextStyles } },
+      "*"
+    );
+  }, [parseTextStyles]);
 
   const handleParseTextStylesChange = useCallback(() => {
     setParseTextStyles(!parseTextStyles);
@@ -70,42 +92,32 @@ function Plugin() {
     setTransformNames(!transformNames);
   }, [transformNames]);
 
-  const handleCloseButtonClick = useCallback(() => {
-    emit<CloseHandler>("CLOSE");
-  }, []);
-
-  const transformVariableNames = useCallback(
-    (variableNames: string[], prefix: string) => {
-      const androidFormat = variableNames.map((name) =>
-        (prefix + "_" + name.toLowerCase().replace(/\s/g, "_").replace(/\/|-/g, "_")).trim()
-      );
-
-      const iosFormat = variableNames.map((name) => {
-        let iosName = (prefix + name)
-          .replace(/-(.)/g, (_, p1) => p1.toUpperCase())
-          .replace(/[_\s\/-]/g, "");
-        return iosName.charAt(0).toLowerCase() + iosName.slice(1);
-      });
-
-      return { androidFormat, iosFormat };
-    },
-    []
-  );
-
   const transformAndDisplay = useCallback(
     (variableNames: VariableInfo[]) => {
       const names = variableNames.map((variable) => variable.name);
-      const { androidFormat, iosFormat } = transformVariableNames(names, prefix);
-
-      setAndroidFormat(androidFormat.join("\n"));
-      setIosFormat(iosFormat.join("\n"));
+      window.parent.postMessage(
+        { pluginMessage: { type: "transformVariableNames", data: { variableNames: names, prefix } } },
+        "*"
+      );
     },
-    [prefix, transformVariableNames]
+    [prefix]
   );
 
   useEffect(() => {
     transformAndDisplay(variables);
-  }, [variables, prefix, transformNames]);
+  }, [variables, prefix, transformNames, parseTextStyles]);
+
+  // Define tab options
+  const options: Array<TabsOption> = [
+    { value: "Android", children: "" },
+    { value: "iOS", children: "" },
+    { value: "CSS", children: "" },
+  ];
+
+  // Handle tab change
+  function handleTabChange(event: JSX.TargetedEvent<HTMLInputElement>) {
+    setTabValue(event.currentTarget.value);
+  }
 
   return (
     <Container space="medium">
@@ -134,17 +146,14 @@ function Plugin() {
             ))}
       </pre>
       <VerticalSpace space="medium" />
-      <div className="flex row " style={{ alignItems: "baseline" }}>
+      <Columns space="small" style={{ alignItems: "baseline" }}>
         <h3 className="mr-1">Variables</h3>
-        <Button
-          id="copyVariables"
-          className="copy-button"
-          onClick={() => copyToClipboard("variable-list")}
-        >
-          Copy
-        </Button>
-      </div>
-      <pre id="variable-list" className="accent">
+        <CopyButton content={variables.map((variable) => variable.name).join("\n")} />
+      </Columns>
+      <pre
+        id="variable-list"
+        style={{ backgroundColor: "var(--figma-color-bg-secondary)", padding: "0.5rem 1rem" }}
+      >
         {variables.map((variable) => variable.name).join("\n")}
       </pre>
       <VerticalSpace space="medium" />
@@ -167,98 +176,53 @@ function Plugin() {
       {parseTextStyles && (
         <>
           <VerticalSpace space="medium" />
-          <TextboxMultiline
-            onInput={handleCustomTextChange}
-            value={customText}
-          />
+          <TextboxMultiline onInput={handleCustomTextChange} value={customText} />
         </>
       )}
       <VerticalSpace space="medium" />
       {transformNames && (
         <div id="transformOptions">
           <VerticalSpace space="medium" />
-          <div className="flex row" style={{ alignItems: "baseline" }}>
-            <label className="mb-1 mr-1">
-              <div className="flex row" style={{ alignItems: "baseline" }}>
-                <span className="mr-1">Prefix: </span>
-                <Textbox value={prefix} onInput={handlePrefixChange} />
-              </div>
-            </label>
-            <Button
-              className="mb-1"
-              onClick={() => transformAndDisplay(variables)}
-            >
-              Generate
-            </Button>
-          </div>
+          <Text>Prefix:</Text>
           <VerticalSpace space="medium" />
-          <div className="flex column align-start">
-            <div className="flex row" style={{ alignItems: "baseline" }}>
-              <h3 className="mr-1">Android Format</h3>
-              <Button
-                id="copyAndroid"
-                className="copy-button"
-                onClick={() => copyToClipboard("androidFormat")}
-              >
-                Copy
-              </Button>
-            </div>
-            <pre id="androidFormat" className="attention m-0 width border-box">
-              {androidFormat}
-            </pre>
-          </div>
+          <Textbox
+            value={prefix}
+            onInput={handlePrefixChange}
+            variant="border"
+            placeholder="Add your prefix here"
+          />
           <VerticalSpace space="medium" />
-          <div className="flex column align-start">
-            <div className="flex row" style={{ alignItems: "baseline" }}>
-              <h3 className="mr-1">iOS Format</h3>
-              <Button
-                id="copyIos"
-                className="copy-button"
-                onClick={() => copyToClipboard("iosFormat")}
-              >
-                Copy
-              </Button>
-            </div>
-            <pre id="iosFormat" className="attention m-0 width border-box">
-              {iosFormat}
-            </pre>
-          </div>
+          <Tabs onChange={handleTabChange} options={options} value={tabValue} />
           <VerticalSpace space="medium" />
-          <div className="flex column align-start">
-            <div className="flex row" style={{ alignItems: "baseline" }}>
-              <h3 className="mr-1">CSS Variables</h3>
-              <Button
-                id="copyCss"
-                className="copy-button"
-                onClick={() => copyToClipboard("cssFormat")}
-              >
-                Copy
-              </Button>
+          {tabValue === "Android" && (
+            <div>
+              <pre id="androidFormat" style={{ backgroundColor: "var(--figma-color-bg-secondary)", padding: "0.5rem 1rem" }}>
+                {androidFormat}
+              </pre>
+              <CopyButton content={androidFormat} />
             </div>
-            <pre id="cssFormat" className="m-0 width border-box">
-              {/* Handle CSS format similar to Android and iOS if needed */}
-            </pre>
-          </div>
+          )}
+          {tabValue === "iOS" && (
+            <div>
+              <pre id="iosFormat" style={{ backgroundColor: "var(--figma-color-bg-secondary)", padding: "0.5rem 1rem" }}>
+                {iosFormat}
+              </pre>
+              <CopyButton content={iosFormat} />
+            </div>
+          )}
+          {tabValue === "CSS" && (
+            <div>
+              <pre id="cssFormat" style={{ backgroundColor: "var(--figma-color-bg-secondary)", padding: "0.5rem 1rem" }}>
+                {cssFormat}
+              </pre>
+              <CopyButton content={cssFormat} />
+            </div>
+          )}
         </div>
       )}
       <VerticalSpace space="medium" />
-      <Button fullWidth onClick={handleCloseButtonClick}>
-        Close Plugin
-      </Button>
     </Container>
   );
-}
-
-// Function to copy text from an element by its ID
-function copyToClipboard(elementId: string) {
-  const text = document.getElementById(elementId)?.textContent || "";
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  document.body.removeChild(textarea);
-  alert("Copied to clipboard");
 }
 
 export default render(Plugin);

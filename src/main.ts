@@ -1,5 +1,5 @@
 import { once, on, showUI } from "@create-figma-plugin/utilities";
-import { CloseHandler, VariableUpdateHandler } from "./types";
+import { VariableUpdateHandler } from "./types";
 
 // Define the interface for VariableInfo
 interface VariableInfo {
@@ -145,6 +145,26 @@ async function getAllVariables(nodes: readonly SceneNode[]): Promise<Array<Varia
   return variables;
 }
 
+// Function to transform variable names to Android, iOS, and CSS formats
+function transformVariableNames(variableNames: string[], prefix: string) {
+  const androidFormat = variableNames.map((name) =>
+    (prefix + "_" + name.toLowerCase().replace(/\s/g, "_").replace(/\/|-/g, "_")).trim()
+  );
+
+  const iosFormat = variableNames.map((name) => {
+    let iosName = (prefix + name)
+      .replace(/-(.)/g, (_, p1) => p1.toUpperCase())
+      .replace(/[_\s\/-]/g, "");
+    return iosName.charAt(0).toLowerCase() + iosName.slice(1);
+  });
+
+  const cssFormat = variableNames.map((name) =>
+    `--${prefix ? `${prefix}-` : ''}${name.toLowerCase().replace(/\s/g, "-").replace(/\//g, "-")}`.trim()
+  );
+
+  return { androidFormat, iosFormat, cssFormat };
+}
+
 export default function () {
   on<VariableUpdateHandler>("VARIABLE_UPDATE", async function () {
     const selection = figma.currentPage.selection;
@@ -152,10 +172,6 @@ export default function () {
       const variables = await getAllVariables(selection);
       figma.ui.postMessage({ type: "variables", data: variables });
     }
-  });
-
-  on<CloseHandler>("CLOSE", function () {
-    figma.closePlugin();
   });
 
   figma.on("selectionchange", async () => {
@@ -176,8 +192,13 @@ export default function () {
         const variables = await getAllVariables(selection);
         figma.ui.postMessage({ type: "variables", data: variables });
       }
+    } else if (msg.type === "transformVariableNames") {
+      const variableNames: string[] = msg.data.variableNames;
+      const prefix: string = msg.data.prefix;
+      const transformedVariableNames = transformVariableNames(variableNames, prefix);
+      figma.ui.postMessage({ type: "transformedVariableNames", data: transformedVariableNames });
     }
   };
 
-  showUI({ height: 400, width: 600 }); // Adjust dimensions as necessary
+  showUI({ height: 600, width: 400 }); // Adjust dimensions as necessary
 }
